@@ -1,5 +1,6 @@
 "use client";
 import { Button } from "@/app/_components/ui/button";
+import { Calendar } from "@/app/_components/ui/calendar";
 import { Card, CardContent } from "@/app/_components/ui/card";
 import {
   Sheet,
@@ -9,8 +10,11 @@ import {
   SheetTrigger,
 } from "@/app/_components/ui/sheet";
 import { Service } from "@prisma/client";
+import { ptBR } from "date-fns/locale";
 import { signIn } from "next-auth/react";
 import Image from "next/image";
+import { useMemo, useState } from "react";
+import { generateDayTimeList } from "../_helpers/hours";
 
 interface ServiceItemProps {
   service: Service;
@@ -18,11 +22,28 @@ interface ServiceItemProps {
 }
 
 const ServiceItem = ({ service, isAuthenticated }: ServiceItemProps) => {
+  const [date, setDate] = useState<Date | undefined>(new Date());
+  const [hour, setHour] = useState<string | undefined>();
+
+  const handleDateClick = (date: Date | undefined) => {
+    setDate(date);
+    setHour(undefined);
+  };
+
+  const handleHourClick = (time: string) => {
+    setHour(time);
+  };
+
   const handleBookingCLick = () => {
     if (!isAuthenticated) {
       return signIn("google");
     }
   };
+
+  const timeList = useMemo(() => {
+    return date ? generateDayTimeList(date) : [];
+  }, [date]);
+
   return (
     <Card>
       <CardContent className="p-3">
@@ -59,10 +80,34 @@ const ServiceItem = ({ service, isAuthenticated }: ServiceItemProps) => {
                   </Button>
                 </SheetTrigger>
 
-                <SheetContent>
-                  <SheetHeader>
+                <SheetContent className="p-0">
+                  <SheetHeader className="text-left px-5 py-6 border-b border-solid border-secondary">
                     <SheetTitle>Fazer reserva</SheetTitle>
                   </SheetHeader>
+                  <Calendar
+                    mode="single"
+                    selected={date}
+                    onSelect={handleDateClick}
+                    className="mt-6 rounded-lg border font-bold text-gray-700  w-full uppercase"
+                    locale={ptBR}
+                    disabled={{ before: new Date() }}
+                  />
+
+                  {/* Mostrar linha de horários */}
+                  {date && (
+                    <div className="flex gap-3 overflow-x-auto [&::-webkit-scrollbar]:hidden py-6 px-5 border-y border-solid border-secondary">
+                      {timeList.map((time) => (
+                        <Button
+                          onClick={() => handleHourClick(time)}
+                          key={time}
+                          variant={hour === time ? "default" : "outline"}
+                          className="rounded-full"
+                        >
+                          {time}
+                        </Button>
+                      ))}
+                    </div>
+                  )}
                 </SheetContent>
               </Sheet>
             </div>
