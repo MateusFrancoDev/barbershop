@@ -1,5 +1,5 @@
 "use client";
-import { Avatar, AvatarImage } from "@radix-ui/react-avatar";
+
 import {
   LogOutIcon,
   UserIcon,
@@ -12,6 +12,7 @@ import { SheetHeader, SheetTitle } from "./ui/sheet";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { Button } from "./ui/button";
 import Link from "next/link";
+import { Avatar, AvatarImage } from "./ui/avatar";
 
 const SideMenu = () => {
   const { data, status } = useSession();
