@@ -42,14 +42,14 @@ const ServiceItem = ({
     if (!date) {
       return;
     }
+
     const refreshAvailableHours = async () => {
       const _dayBookings = await getDayBookings(barbershop.id, date);
-
       setDayBookings(_dayBookings);
     };
 
     refreshAvailableHours();
-  }, [date]);
+  }, [date, barbershop.id]);
 
   const handleDateClick = (date: Date | undefined) => {
     setDate(date);
@@ -99,18 +99,19 @@ const ServiceItem = ({
 
     return generateDayTimeList(date).filter((time) => {
       const timeHour = Number(time.split(":")[0]);
-      const timeMinutos = Number(time.split(":")[0]);
+      const timeMinutes = Number(time.split(":")[1]);
 
       const booking = dayBookings.find((booking) => {
-        const bookingHours = booking.date.getHours();
+        const bookingHour = booking.date.getHours();
         const bookingMinutes = booking.date.getMinutes();
 
-        return bookingHours === timeHour && bookingMinutes === timeMinutos;
+        return bookingHour === timeHour && bookingMinutes === timeMinutes;
       });
 
       if (!booking) {
         return true;
       }
+
       return false;
     });
   }, [date, dayBookings]);
