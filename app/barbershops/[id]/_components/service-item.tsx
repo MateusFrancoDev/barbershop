@@ -10,15 +10,16 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/app/_components/ui/sheet";
-import { Barbershop, Service } from "@prisma/client";
+import { Barbershop, Booking, Service } from "@prisma/client";
 import { ptBR } from "date-fns/locale";
 import { signIn, useSession } from "next-auth/react";
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { generateDayTimeList } from "../_helpers/hours";
 import { format, setHours, setMinutes } from "date-fns";
 import { saveBooking } from "../_actions/save-booking";
 import { Loader2 } from "lucide-react";
+import { getDayBookings } from "../_actions/get-day-bookings";
 
 interface ServiceItemProps {
   barbershop: Barbershop;
@@ -35,6 +36,20 @@ const ServiceItem = ({
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [hour, setHour] = useState<string | undefined>();
   const [submitIsLoading, setSubmitIsLoading] = useState(false);
+  const [dayBookings, setDayBookings] = useState<Booking[]>([]);
+
+  useEffect(() => {
+    if (!date) {
+      return;
+    }
+    const refreshAvailableHours = async () => {
+      const _dayBookings = await getDayBookings(date);
+
+      setDayBookings(_dayBookings);
+    };
+
+    refreshAvailableHours();
+  }, [date]);
 
   const handleDateClick = (date: Date | undefined) => {
     setDate(date);
@@ -76,9 +91,29 @@ const ServiceItem = ({
     }
   };
 
+  // Logica para quando reservar um horário a hora que está reservada não apareça novamente
   const timeList = useMemo(() => {
-    return date ? generateDayTimeList(date) : [];
-  }, [date]);
+    if (!date) {
+      return [];
+    }
+
+    return generateDayTimeList(date).filter((time) => {
+      const timeHour = Number(time.split(":")[0]);
+      const timeMinutos = Number(time.split(":")[0]);
+
+      const booking = dayBookings.find((booking) => {
+        const bookingHours = booking.date.getHours();
+        const bookingMinutes = booking.date.getMinutes();
+
+        return bookingHours === timeHour && bookingMinutes === timeMinutos;
+      });
+
+      if (!booking) {
+        return true;
+      }
+      return false;
+    });
+  }, [date, dayBookings]);
 
   return (
     <Card>
