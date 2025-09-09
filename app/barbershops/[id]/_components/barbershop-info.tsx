@@ -8,15 +8,17 @@ import { ChevronLeftIcon, MapPinIcon, MenuIcon, StarIcon } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
-interface BarbershopIfoProps {
+interface BarbershopInfoProps {
   barbershop: Barbershop;
 }
 
-const BarbershopInfo = ({ barbershop }: BarbershopIfoProps) => {
+const BarbershopInfo = ({ barbershop }: BarbershopInfoProps) => {
   const router = useRouter();
+
   const handleBackClick = () => {
     router.replace("/");
   };
+
   return (
     <div>
       <div className="h-[250px] w-full relative">
@@ -24,7 +26,7 @@ const BarbershopInfo = ({ barbershop }: BarbershopIfoProps) => {
           onClick={handleBackClick}
           size="icon"
           variant="outline"
-          className="z-50 top-4 left-4 m-4 absolute"
+          className="z-50 absolute top-4 left-4"
         >
           <ChevronLeftIcon />
         </Button>
@@ -34,34 +36,37 @@ const BarbershopInfo = ({ barbershop }: BarbershopIfoProps) => {
             <Button
               size="icon"
               variant="outline"
-              className="z-50 top-4 right-4 m-4 absolute"
+              className="z-50 absolute top-4 right-4"
             >
               <MenuIcon />
             </Button>
           </SheetTrigger>
+
           <SheetContent className="p-0">
             <SideMenu />
           </SheetContent>
         </Sheet>
+
         <Image
           src={barbershop.imageUrl}
-          alt={barbershop.name}
           fill
-          style={{ objectFit: "cover" }}
+          alt={barbershop.name}
+          style={{
+            objectFit: "cover",
+          }}
           className="opacity-75"
         />
       </div>
 
-      <div className="px-5 py-3 pb-6 border-b border-solid border-secondary">
-        <h1 className="text-xl font-bold ">{barbershop.name}</h1>
-        <div className="flex item-center gap-1 mt-2">
+      <div className="px-5 pt-3 pb-6 border-b border-solid border-secondary">
+        <h1 className="text-xl font-bold">{barbershop.name}</h1>
+        <div className="flex items-center gap-1 mt-2">
           <MapPinIcon className="text-primary" size={18} />
-          <p className="text.sm">{barbershop.address}</p>
+          <p className="text-sm">{barbershop.address}</p>
         </div>
-
-        <div className="flex item-center gap-1 mt-2">
+        <div className="flex items-center gap-1 mt-2">
           <StarIcon className="text-primary" size={18} />
-          <p className="text.sm">4,5 (887 avaliações)</p>
+          <p className="text-sm">5,0 (899 avaliações)</p>
         </div>
       </div>
     </div>

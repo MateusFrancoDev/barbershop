@@ -1,4 +1,5 @@
 "use client";
+
 import { Button } from "@/app/_components/ui/button";
 import { Calendar } from "@/app/_components/ui/calendar";
 import { Card, CardContent } from "@/app/_components/ui/card";
@@ -16,9 +17,11 @@ import { signIn, useSession } from "next-auth/react";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { generateDayTimeList } from "../_helpers/hours";
-import { format, setHours, setMinutes } from "date-fns";
+import { addDays, format, setHours, setMinutes } from "date-fns";
 import { saveBooking } from "../_actions/save-booking";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 import { getDayBookings } from "../_actions/get-day-bookings";
 
 interface ServiceItemProps {
@@ -32,10 +35,14 @@ const ServiceItem = ({
   barbershop,
   isAuthenticated,
 }: ServiceItemProps) => {
+  const router = useRouter();
+
   const { data } = useSession();
+
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [hour, setHour] = useState<string | undefined>();
   const [submitIsLoading, setSubmitIsLoading] = useState(false);
+  const [sheetIsOpen, setSheetIsOpen] = useState(false);
   const [dayBookings, setDayBookings] = useState<Booking[]>([]);
 
   useEffect(() => {
@@ -60,14 +67,15 @@ const ServiceItem = ({
     setHour(time);
   };
 
-  const handleBookingCLick = () => {
+  const handleBookingClick = () => {
     if (!isAuthenticated) {
       return signIn("google");
     }
   };
 
-  const handleBooking = async () => {
+  const handleBookingSubmit = async () => {
     setSubmitIsLoading(true);
+
     try {
       if (!hour || !date || !data?.user) {
         return;
@@ -84,6 +92,19 @@ const ServiceItem = ({
         date: newDate,
         userId: (data.user as any).id,
       });
+
+      setSheetIsOpen(false);
+      setHour(undefined);
+      setDate(undefined);
+      toast("Reserva realizada com sucesso!", {
+        description: format(newDate, "'Para' dd 'de' MMMM 'às' HH':'mm'.'", {
+          locale: ptBR,
+        }),
+        action: {
+          label: "Visualizar",
+          onClick: () => router.push("/bookings"),
+        },
+      });
     } catch (error) {
       console.error(error);
     } finally {
@@ -91,7 +112,6 @@ const ServiceItem = ({
     }
   };
 
-  // Logica para quando reservar um horário a hora que está reservada não apareça novamente
   const timeList = useMemo(() => {
     if (!date) {
       return [];
@@ -118,44 +138,41 @@ const ServiceItem = ({
 
   return (
     <Card>
-      <CardContent className="p-3">
+      <CardContent className="p-3 w-full">
         <div className="flex gap-4 items-center w-full">
-          <div className="relative min-h-[110px] min-w-[110px] max-w-[110px]">
+          <div className="relative min-h-[110px] min-w-[110px] max-h-[110px] max-w-[110px]">
             <Image
+              className="rounded-lg"
               src={service.imageUrl}
-              alt={service.name}
               fill
               style={{ objectFit: "contain" }}
-              className="rounded-lg"
+              alt={service.name}
             />
           </div>
 
           <div className="flex flex-col w-full">
-            <h2 className="font-bold ">{service.name}</h2>
+            <h2 className="font-bold">{service.name}</h2>
             <p className="text-sm text-gray-400">{service.description}</p>
 
-            <div className="flex item-center justify-between mt-3">
-              <p className="text-primary text-sm font-bold mt-2">
+            <div className="flex items-center justify-between mt-3">
+              <p className="text-primary text-sm font-bold">
                 {Intl.NumberFormat("pt-BR", {
                   style: "currency",
                   currency: "BRL",
                 }).format(Number(service.price))}
               </p>
-              <Sheet>
+              <Sheet open={sheetIsOpen} onOpenChange={setSheetIsOpen}>
                 <SheetTrigger asChild>
-                  <Button
-                    variant="secondary"
-                    className="text-primary"
-                    onClick={handleBookingCLick}
-                  >
+                  <Button variant="secondary" onClick={handleBookingClick}>
                     Reservar
                   </Button>
                 </SheetTrigger>
 
                 <SheetContent className="p-0">
                   <SheetHeader className="text-left px-5 py-6 border-b border-solid border-secondary">
-                    <SheetTitle>Fazer reserva</SheetTitle>
+                    <SheetTitle>Fazer Reserva</SheetTitle>
                   </SheetHeader>
+
                   <div className="py-6">
                     <Calendar
                       mode="single"
@@ -166,15 +183,16 @@ const ServiceItem = ({
                       disabled={{ before: new Date() }}
                     />
                   </div>
-                  {/* Mostrar linha de horários */}
+
+                  {/* Mostrar lista de horários apenas se alguma data estiver selecionada */}
                   {date && (
-                    <div className="flex gap-3 overflow-x-auto [&::-webkit-scrollbar]:hidden py-6 px-5 border-t border-solid border-secondary">
+                    <div className="flex gap-3 overflow-x-auto py-6 px-5 border-t border-solid border-secondary [&::-webkit-scrollbar]:hidden">
                       {timeList.map((time) => (
                         <Button
                           onClick={() => handleHourClick(time)}
-                          key={time}
                           variant={hour === time ? "default" : "outline"}
                           className="rounded-full"
+                          key={time}
                         >
                           {time}
                         </Button>
@@ -182,8 +200,7 @@ const ServiceItem = ({
                     </div>
                   )}
 
-                  {/* CARTÃO DE SERVIÇO */}
-                  <div className="py-6 px-5 border-t border-secondary">
+                  <div className="py-6 px-5 border-t border-solid border-secondary">
                     <Card>
                       <CardContent className="p-3 gap-3 flex flex-col">
                         <div className="flex justify-between">
@@ -200,8 +217,10 @@ const ServiceItem = ({
                         {date && (
                           <div className="flex justify-between">
                             <h3 className="text-gray-400 text-sm">Data</h3>
-                            <h4 className="text-sm ">
-                              {format(date, "d' de ' MMMM", { locale: ptBR })}
+                            <h4 className="text-sm">
+                              {format(date, "dd 'de' MMMM", {
+                                locale: ptBR,
+                              })}
                             </h4>
                           </div>
                         )}
@@ -209,13 +228,13 @@ const ServiceItem = ({
                         {hour && (
                           <div className="flex justify-between">
                             <h3 className="text-gray-400 text-sm">Horário</h3>
-                            <h4 className="text-sm ">{hour}</h4>
+                            <h4 className="text-sm">{hour}</h4>
                           </div>
                         )}
 
                         <div className="flex justify-between">
                           <h3 className="text-gray-400 text-sm">Barbearia</h3>
-                          <h4 className="text-sm ">{barbershop.name}</h4>
+                          <h4 className="text-sm">{barbershop.name}</h4>
                         </div>
                       </CardContent>
                     </Card>
@@ -223,7 +242,7 @@ const ServiceItem = ({
 
                   <SheetFooter className="px-5">
                     <Button
-                      onClick={handleBooking}
+                      onClick={handleBookingSubmit}
                       disabled={!hour || !date || submitIsLoading}
                     >
                       {submitIsLoading && (
