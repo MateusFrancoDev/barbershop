@@ -58,7 +58,6 @@ As seguintes principais ferramentas foram usadas na construção do projeto:
 - **[NextJs](https://nextjs.org/)**
 - **[TypeScript](https://www.typescriptlang.org/)**
 - **[Shadcn-ui](https://ui.shadcn.com/)**
-- **[Axios](https://axios-http.com/ptbr/docs/intro)**
 - **[Google Cloud](https://cloud.google.com/)**
 - **[Prima](https://www.prisma.io/nextjs)**
 
