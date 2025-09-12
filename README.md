@@ -1,5 +1,5 @@
 ﻿<h1 align="center">
-FWS Store
+Barber
 </h1>
 
 <h4 align="center"> 
